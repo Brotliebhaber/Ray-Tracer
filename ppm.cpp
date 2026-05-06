@@ -96,10 +96,10 @@ int main() {
 
 
     hittable_list scene;
-    auto sphere_1 = std::make_shared<sphere>(0.2, vec3(0.0,0.0,-1.0));
-    auto sphere_2 = std::make_shared<sphere>(0.2, vec3(0.2,0.0,-1.0));
+    auto sphere_1 = std::make_shared<sphere>(0.3, vec3(-2.0,1.0,-2.0));
+    auto sphere_2 = std::make_shared<sphere>(0.5, vec3(2.2,0.0,-3.0));
     auto sphere_3 = std::make_shared<sphere>(0.2, vec3(-0.2,0.0, -1.0));
-    auto sphere_4 = std::make_shared<sphere>(0.2, vec3(0.0,0.2, -1.0));
+    auto sphere_4 = std::make_shared<sphere>(1.2, vec3(1.0,4.2, -7.0));
     auto sphere_5 = std::make_shared<sphere>(0.2, vec3(0.0,0.4, -1.0));
     scene.add(sphere_1);
     scene.add(sphere_2);
