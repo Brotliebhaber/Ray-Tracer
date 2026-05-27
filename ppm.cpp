@@ -5,7 +5,10 @@
 #include "ray.h"
 #include "hittable.h"
 #include "sphere.h"
-
+#include "triangle.h"
+#include "cube.h"
+#include "shading.h"
+#include "phong_shader.h"
 
 auto radius = 0.5;
 vec3 sphere_center(0.0, 0.0, -1.0);
@@ -38,12 +41,33 @@ double hit_sphere(const ray& r, float radi, const vec3 center) {
 }
 
 
-color ray_color(const ray& r, const hittable_list& object_list) {
+color ray_color(const ray& r, const hittable_list& object_list, const vec3& camera_pos, const Point_Light& light) {
     vec3 unit_direction = unit_vector(r.direction());
     auto a = 0.5 * (unit_direction.y() + 1.0);
     hit_record hits;
-    if(object_list.hit(r, 0.001, INFINITY, hits)){
+
+    /*expliziter Dreiecks funkionstest
+    vertex vertex_0 = vertex(vec3(0,0,-2), vec3(0,0,0));
+    vertex vertex_2 = vertex(vec3(1,0,-2), vec3(0,0,0));
+    vertex vertex_1 = vertex(vec3(1,2,-5), vec3(0,0,0));
+    mesh _mesh;
+    _mesh.vertices.push_back(vertex_0);
+    _mesh.vertices.push_back(vertex_1);
+    _mesh.vertices.push_back(vertex_2);
+    _mesh.indices.push_back(triangle(0,1,2));
+
+
+    if(_mesh.indices[0].hit(r, 0.001, INFINITY, hits, _mesh)){
         return(hits.normal.x()*color(1.0,0.0,0.0) + hits.normal.y()*color(0.0,1.0,0.0) + hits.normal.z()*color(0.0,0.0,1.0));
+    }*/
+    
+    if(object_list.hit(r, 0.000001, INFINITY, hits)){
+        if (hits.normal.x() == 0 && hits.normal.y() == 0 && hits.normal.z() == 0) {
+    // Wenn das hier triggert, ist die Normale komplett leer (0,0,0)
+            return color(1, 0, 0); // Färbe den Fehler knallrot!
+        }
+        //return(hits.normal.x()*color(1.0,0.0,0.0) + hits.normal.y()*color(0.0,1.0,0.0) + hits.normal.z()*color(0.0,0.0,1.0));
+        return(Phong_Shader::compute_light(hits, camera_pos, light));
     }
     else {
         return (1.0-a)*color(1.0,1.0,1.0) + a * color(0.5, 0.7, 1.0);
@@ -95,17 +119,38 @@ int main() {
     auto pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
 
+    //test for triangle hit function
+   // position(point3(0,0,0)), normal(vec3(0,0,0))
+    vertex vertex_0 = vertex(vec3(0,0,0), vec3(0,0,0));
+    vertex vertex_2 = vertex(vec3(1,0,0), vec3(0,0,0));
+    vertex vertex_1 = vertex(vec3(1,1,0), vec3(0,0,0));
+    mesh _mesh;
+    _mesh.vertices.push_back(vertex_0);
+    _mesh.vertices.push_back(vertex_1);
+    _mesh.vertices.push_back(vertex_2);
+    _mesh.indices.push_back(triangle(0,1,2));
+
+
+    //Material Properties
+    auto red_plastic = std::make_shared<Phong_Material>(vec3(1.0, 0.1, 0.1), 0.3, 0.7, 0.7, 32.0);
+    auto shiny_blue = std::make_shared<Phong_Material>(vec3(0.0, 1.0, 0.1), 0.4, 0.4, 0.7, 32.0);
+    //Light Sources
+    auto light1 = Point_Light(vec3(-14.0, 1.0, -8.0), vec3(1.0,1.0,1.0), 1.0);
+
     hittable_list scene;
-    auto sphere_1 = std::make_shared<sphere>(0.3, vec3(-2.0,1.0,-2.0));
-    auto sphere_2 = std::make_shared<sphere>(0.5, vec3(2.2,0.0,-3.0));
-    auto sphere_3 = std::make_shared<sphere>(0.2, vec3(-0.2,0.0, -1.0));
-    auto sphere_4 = std::make_shared<sphere>(1.2, vec3(1.0,4.2, -7.0));
-    auto sphere_5 = std::make_shared<sphere>(0.2, vec3(0.0,0.4, -1.0));
+    auto sphere_1 = std::make_shared<sphere>(0.3, vec3(-2.0,1.0,-8.0), shiny_blue);
+    auto sphere_2 = std::make_shared<sphere>(0.5, vec3(2.2,0.0,-5.0), shiny_blue);
+    auto sphere_3 = std::make_shared<sphere>(0.2, vec3(-0.2,0.0, -9.0), shiny_blue);
+    auto sphere_4 = std::make_shared<sphere>(1.2, vec3(1.0,4.2, -7.0), shiny_blue);
+    auto sphere_5 = std::make_shared<sphere>(0.2, vec3(-2.0,0.4, -10.0), shiny_blue);
     scene.add(sphere_1);
     scene.add(sphere_2);
     scene.add(sphere_3);
     scene.add(sphere_4);
     scene.add(sphere_5);
+    //create cube
+    auto cube_1 = std::make_shared<cube>(point3(-2.0, 1.0, -8.0), 4.0, 280.0, 140.0, 720.0, red_plastic);
+    scene.add(cube_1);
 
     // Render
     std::ofstream out("image.ppm");
@@ -118,7 +163,7 @@ int main() {
             auto ray_direction = pixel_center - camera_center;
             ray r(camera_center, ray_direction);
             //hit_record hits;
-            color pixel_color = ray_color(r, scene); 
+            color pixel_color = ray_color(r, scene, camera_center, light1); 
             write_color(out, pixel_color);
             
 

@@ -3,6 +3,7 @@
 #include <vector>
 #include "vec3.h"
 #include "ray.h"
+#include "shading.h"
 
 //A note of the closest recorded hit (gets updated at each closer hit) created for every ray
 struct hit_record
@@ -10,6 +11,7 @@ struct hit_record
     double t;
     point3 p;
     vec3 normal;
+    std::shared_ptr<Phong_Material> material;
 };
 //Each class hittable should have the function hit
 class hittable
